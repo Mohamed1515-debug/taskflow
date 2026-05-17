@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TaskFlow</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav id="navbar" class="hidden">
+    <div class="nav-brand">⚡ TaskFlow</div>
+    <div class="nav-links">
+      <a href="#" onclick="showPage('dashboard')">Tableau de bord</a>
+      <a href="#" onclick="showPage('projects')">Projets</a>
+    </div>
+    <div class="nav-right">
+      <div class="notif-bell" onclick="toggleNotifPanel()">
+        🔔 <span id="notif-badge" class="badge hidden">0</span>
+      </div>
+      <span id="nav-username"></span>
+      <button onclick="logout()" class="btn btn-sm">Déconnexion</button>
+    </div>
+  </nav>
+
+  <!-- PANEL NOTIFICATIONS -->
+  <div id="notif-panel" class="notif-panel hidden">
+    <h3>Notifications</h3>
+    <ul id="notif-list"></ul>
+  </div>
+
+  <!-- PAGE: AUTH -->
+  <div id="page-auth" class="page">
+    <div class="auth-card">
+      <h1>⚡ TaskFlow</h1>
+      <p class="subtitle">Gestion de projets collaboratifs</p>
+
+      <div class="tab-switcher">
+        <button class="tab-btn active" onclick="switchTab('login')">Connexion</button>
+        <button class="tab-btn" onclick="switchTab('register')">Inscription</button>
+      </div>
+
+      <!-- Login -->
+      <div id="tab-login">
+        <input id="login-email" type="email" placeholder="Email" class="input"/>
+        <input id="login-password" type="password" placeholder="Mot de passe" class="input"/>
+        <button onclick="login()" class="btn btn-primary w-full">Se connecter</button>
+      </div>
+
+      <!-- Register -->
+      <div id="tab-register" class="hidden">
+        <input id="reg-name" type="text" placeholder="Nom complet" class="input"/>
+        <input id="reg-email" type="email" placeholder="Email" class="input"/>
+        <input id="reg-password" type="password" placeholder="Mot de passe" class="input"/>
+        <button onclick="register()" class="btn btn-primary w-full">Créer un compte</button>
+      </div>
+
+      <p id="auth-error" class="error-msg hidden"></p>
+    </div>
+  </div>
+
+  <!-- PAGE: DASHBOARD -->
+  <div id="page-dashboard" class="page hidden">
+    <div class="container">
+      <h2>Mon tableau de bord</h2>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-num" id="stat-projects">—</div><div>Projets actifs</div></div>
+        <div class="stat-card"><div class="stat-num" id="stat-tasks">—</div><div>Tâches assignées</div></div>
+        <div class="stat-card green"><div class="stat-num" id="stat-done">—</div><div>Terminées</div></div>
+        <div class="stat-card red"><div class="stat-num" id="stat-late">—</div><div>En retard</div></div>
+      </div>
+
+      <h3>Tâches en cours</h3>
+      <div id="dashboard-tasks" class="task-list"></div>
+    </div>
+  </div>
+
+  <!-- PAGE: PROJETS -->
+  <div id="page-projects" class="page hidden">
+    <div class="container">
+      <div class="page-header">
+        <h2>Mes projets</h2>
+        <button onclick="openProjectModal()" class="btn btn-primary">+ Nouveau projet</button>
+      </div>
+      <div id="projects-list" class="projects-grid"></div>
+    </div>
+  </div>
+
+  <!-- PAGE: PROJET DETAIL -->
+  <div id="page-project-detail" class="page hidden">
+    <div class="container">
+      <button onclick="showPage('projects')" class="btn btn-sm back-btn">← Retour</button>
+      <div class="project-detail-header">
+        <div>
+          <h2 id="detail-title"></h2>
+          <p id="detail-description"></p>
+          <span id="detail-status" class="badge-status"></span>
+        </div>
+        <div class="project-actions" id="owner-actions" style="display:none">
+          <button onclick="openInviteModal()" class="btn btn-sm">+ Inviter</button>
+          <button onclick="deleteProject()" class="btn btn-sm btn-danger">Supprimer</button>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchDetailTab('tasks')">Tâches</button>
+        <button class="tab-btn" onclick="switchDetailTab('members')">Membres</button>
+        <button class="tab-btn" onclick="switchDetailTab('activities')">Activités</button>
+      </div>
+
+      <!-- Tâches -->
+      <div id="detail-tasks">
+        <div class="filters">
+          <select id="filter-status" onchange="loadTasks()">
+            <option value="">Tous statuts</option>
+            <option value="à faire">À faire</option>
+            <option value="en cours">En cours</option>
+            <option value="terminé">Terminé</option>
+          </select>
+          <select id="filter-priority" onchange="loadTasks()">
+            <option value="">Toutes priorités</option>
+            <option value="haute">Haute</option>
+            <option value="moyenne">Moyenne</option>
+            <option value="basse">Basse</option>
+          </select>
+          <input id="filter-search" type="text" placeholder="Rechercher..." oninput="loadTasks()" class="input input-sm"/>
+          <button onclick="openTaskModal()" class="btn btn-primary btn-sm">+ Tâche</button>
+        </div>
+        <div id="tasks-list" class="task-list"></div>
+        <div id="tasks-pagination" class="pagination"></div>
+      </div>
+
+      <!-- Membres -->
+      <div id="detail-members" class="hidden">
+        <div id="members-list"></div>
+      </div>
+
+      <!-- Activités -->
+      <div id="detail-activities" class="hidden">
+        <div id="activities-list" class="activity-feed"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: PROJET -->
+  <div id="modal-project" class="modal hidden">
+    <div class="modal-content">
+      <h3>Nouveau projet</h3>
+      <input id="proj-title" type="text" placeholder="Titre" class="input"/>
+      <textarea id="proj-description" placeholder="Description" class="input"></textarea>
+      <input id="proj-deadline" type="date" class="input"/>
+      <div class="modal-actions">
+        <button onclick="closeModal('modal-project')" class="btn">Annuler</button>
+        <button onclick="createProject()" class="btn btn-primary">Créer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: TÂCHE -->
+  <div id="modal-task" class="modal hidden">
+    <div class="modal-content">
+      <h3>Nouvelle tâche</h3>
+      <input id="task-title" type="text" placeholder="Titre" class="input"/>
+      <textarea id="task-description" placeholder="Description" class="input"></textarea>
+      <select id="task-priority" class="input">
+        <option value="basse">Basse</option>
+        <option value="moyenne" selected>Moyenne</option>
+        <option value="haute">Haute</option>
+      </select>
+      <input id="task-deadline" type="date" class="input"/>
+      <select id="task-assignedTo" class="input">
+        <option value="">Non assignée</option>
+      </select>
+      <p id="draft-banner" class="draft-banner hidden">📝 Brouillon restauré. <a href="#" onclick="clearDraft()">Repartir à zéro</a></p>
+      <div class="modal-actions">
+        <button onclick="closeModal('modal-task')" class="btn">Annuler</button>
+        <button onclick="createTask()" class="btn btn-primary">Créer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: INVITER -->
+  <div id="modal-invite" class="modal hidden">
+    <div class="modal-content">
+      <h3>Inviter un membre</h3>
+      <input id="invite-email" type="email" placeholder="Email du membre" class="input"/>
+      <div class="modal-actions">
+        <button onclick="closeModal('modal-invite')" class="btn">Annuler</button>
+        <button onclick="inviteMember()" class="btn btn-primary">Inviter</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
