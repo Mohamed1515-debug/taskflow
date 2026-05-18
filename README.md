@@ -89,8 +89,5 @@ git commit -m "feat: add authentication middleware"
 
 | Membre | Fonctionnalité(s) |
 |--------|-------------------|
-| [Nom 1] | Auth + Middleware |
-| [Nom 2] | Projets + Membres |
-| [Nom 3] | Tâches + Filtrage |
-| [Nom 4] | Dashboard + Activités + Notifications |
-| [Nom 5] | Brouillons + Assignation + Frontend |
+| Mohamed El Bakkali | Auth + Projets + Tâches + Dashboard |
+| Yahya El Gharsi | Membres + Filtrage + Notifications + Frontend |
